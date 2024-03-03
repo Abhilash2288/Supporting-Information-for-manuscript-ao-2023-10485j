@@ -1,0 +1,47 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split, cross_val_score, KFold
+from sklearn.metrics import mean_squared_error, r2_score
+from xgboost import XGBRegressor  # Import XGBRegressor instead of xgb
+
+data = pd.read_excel("C:/Users/abhil/Downloads/FINAL_CV_DATASET.xlsx")
+
+predictors = ["Potential", "OXIDATION", "Zn/Co_Conc", "SCAN_RATE", "ZN", "CO"]
+target = "Current"
+
+train_data, test_data, train_target, test_target = train_test_split(
+   data[predictors], data[target], test_size=0.2, random_state=123
+)
+
+params = {
+   'objective': 'reg:squarederror',
+   'eval_metric': 'rmse',
+   'eta': 0.1,
+   'max_depth': 6
+}
+#MODEL
+xgb_model = XGBRegressor(**params, n_estimators=200)  # Use XGBRegressor
+
+xgb_model.fit(train_data, train_target)
+
+xgb_predictions = xgb_model.predict(test_data)
+
+rmse = mean_squared_error(test_target, xgb_predictions, squared=False)
+mse = mean_squared_error(test_target, xgb_predictions)
+r2 = r2_score(test_target, xgb_predictions)
+
+print("Test RMSE:", rmse)
+print("Test MSE:", mse)
+print("Test R-squared:", r2)
+
+# 10-fold cross-validation
+cv = KFold(n_splits=10, shuffle=True, random_state=123)
+cv_r2_scores = cross_val_score(xgb_model, data[predictors], data[target], scoring='r2', cv=cv)
+
+print("\n10-Fold Cross-Validation R-squared Scores:")
+for i, score in enumerate(cv_r2_scores):
+   print(f"Fold {i + 1}: {score}")
+
+average_cv_r2 = np.mean(cv_r2_scores)
+print(f"\nAverage 10-Fold Cross-Validation R-squared: {average_cv_r2}")
+
