@@ -1,0 +1,49 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, r2_score
+
+data = pd.read_excel("C:/Users/abhil/Downloads/FINAL_CV_DATASET.xlsx")
+predictors = ["Potential", "OXIDATION", "Zn/Co_Conc", "SCAN_RATE","ZN","CO"]
+target = "Current"
+
+train_data, test_data, train_target, test_target = train_test_split(
+   data[predictors], data[target], test_size=0.2, random_state=123
+)
+
+num_trees = 100
+max_depth = 11
+
+rf_model = RandomForestRegressor(n_estimators=num_trees, max_depth=max_depth, random_state=123)
+rf_model.fit(train_data, train_target)
+
+rf_predictions = rf_model.predict(test_data)
+
+rmse = mean_squared_error(test_target, rf_predictions, squared=False)
+print("RMSE:", rmse)
+
+mse = mean_squared_error(test_target, rf_predictions)
+print("MSE:", mse)
+
+r2 = r2_score(test_target, rf_predictions)
+print("R-squared:", r2)
+
+# Feature importance
+feature_importance = pd.Series(rf_model.feature_importances_, index=predictors)
+print("Feature Importance:\n", feature_importance)
+
+train_predictions = rf_model.predict(train_data)
+
+train_rmse = mean_squared_error(train_target, train_predictions, squared=False)
+print("Train RMSE:", train_rmse)
+
+train_mse = mean_squared_error(train_target, train_predictions)
+print("Train MSE:", train_mse)
+
+train_r2 = r2_score(train_target, train_predictions)
+print("Train R-squared:", train_r2)
+
+# Test RMSE, MSE, R-squared were already calculated above
+# Cross-validation to evaluate model performance
+cv_scores = cross_val_score(rf_model, test_data, test_target, cv=10, scoring='r2')
+print("Cross-Validation R-squared scores:", cv_scores)
